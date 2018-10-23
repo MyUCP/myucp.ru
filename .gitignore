@@ -1,0 +1,9 @@
+/node_modules
+/assets/cache
+/assets/files
+/vendor
+/.idea
+/.vscode
+npm-debug.log
+yarn-error.log
+.env
