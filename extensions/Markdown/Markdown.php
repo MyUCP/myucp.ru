@@ -13,8 +13,7 @@ class Markdown implements Extensionable
 
     public function __construct(\Application $app)
     {
-        //    
-        $this->setMarkupEscaped(true);
+        //
     }
 
     public function run()

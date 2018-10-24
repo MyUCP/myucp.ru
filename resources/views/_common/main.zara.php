@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>@yield("title") &bull; MyUCP — php-фреймворк</title>
+        <title>MyUCP — php-фреймворк</title>
         <meta name="description" content="Описание">
         <link rel="shortcut icon" href="/favicon.ico">
         <link rel="stylesheet" href="{{ asset('css/style.css') }}">

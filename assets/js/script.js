@@ -6798,3 +6798,8 @@ function(e, t, n) {
         }, 600))
     })
 });
+
+$(document).ready(function() {
+    var title = $("h1").text();
+    $("title").html(title + " &bull; MyUCP — фреймворк")
+});

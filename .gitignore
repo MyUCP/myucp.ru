@@ -1,6 +1,7 @@
 /node_modules
 /assets/cache
 /assets/files
+/resources/docs
 /vendor
 /.idea
 /.vscode
