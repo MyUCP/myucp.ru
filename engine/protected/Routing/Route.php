@@ -65,6 +65,16 @@ class Route
     public $csrf_verify = false;
 
     /**
+     * @var Router
+     */
+    protected $router;
+
+    /**
+     * @var Request
+     */
+    protected $request;
+
+    /**
      * Create a new Route instance.
      *
      * @param  array|string  $methods
@@ -283,6 +293,19 @@ class Route
     }
 
     /**
+     * Change the route name
+     *
+     * @param $name
+     * @return $this
+     */
+    public function setName($name)
+    {
+        $this->action['as'] = $name;
+
+        return $this;
+    }
+
+    /**
      * Get the name of the route instance.
      *
      * @return string
@@ -320,7 +343,7 @@ class Route
     /**
      * Bind model to route
      *
-     * @param string $models
+     * @param mixed ...$models
      * @return $this
      */
     public function model(...$models)
@@ -359,6 +382,8 @@ class Route
      * @param Application $app
      *
      * @return void
+     * @throws HttpException
+     * @throws DebugException
      */
     public function compileRoute($app)
     {
@@ -371,6 +396,7 @@ class Route
      * Get the controller instance for the route.
      *
      * @return mixed
+     * @throws DebugException
      */
     public function getController()
     {
@@ -387,33 +413,13 @@ class Route
      * Load controller class file.
      *
      * @return string
+     * @throws DebugException
      */
     public function loadController()
     {
         $controllerName = $this->parseControllerCallback()[0];
 
-        if(strpos($controllerName, ".")){
-            $path = explode(".", $controllerName);
-
-            $controller = array_shift(array_reverse($path));
-
-            array_pop($path);
-
-            $folder = implode( DIRECTORY_SEPARATOR, $path);
-        } else {
-            $controller = $controllerName;
-        }
-
-        if(!isset($folder)){
-            $controllerFile = APP_DIR . 'controllers' . DIRECTORY_SEPARATOR . $controller . '.php';
-        } else {
-            $controllerFile = APP_DIR . 'controllers' . DIRECTORY_SEPARATOR . $folder . DIRECTORY_SEPARATOR . $controller . '.php';
-        }
-
-        if(!file_exists($controllerFile))
-            throw new DebugException("Файл контроллера <b>$controllerName</b> не найден");
-
-        require_once($controllerFile);
+        $controller = Controller::load($controllerName);
 
         return $controller;
     }
@@ -435,7 +441,7 @@ class Route
      */
     protected function parseControllerCallback()
     {
-        return Str::parseCallback($this->action['uses']);
+        return Str::parseCallback($this->action['uses'], 'index');
     }
 
     /**

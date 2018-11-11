@@ -5,6 +5,9 @@
 
 namespace MyUCP\Extension;
 
+use Application;
+use DebugException;
+
 class Extension
 {
     /**
@@ -23,17 +26,17 @@ class Extension
     protected $bootedExtensions = [];
 
     /**
-     * @var \Application
+     * @var Application
      */
     protected $app;
 
     /**
      * Extension constructor.
      *
-     * @param \Application $app
-     * @throws \DebugException
+     * @param Application $app
+     * @throws DebugException
      */
-    public function __construct(\Application $app)
+    public function __construct(Application $app)
     {
         $this->app = $app;
 
@@ -41,7 +44,7 @@ class Extension
     }
 
     /**
-     * @throws \DebugException
+     * @throws DebugException
      */
     protected function load()
     {
@@ -49,10 +52,10 @@ class Extension
 
         foreach($extensions['boot'] as $alias => $extension)
         {
-            $implements = class_implements($extension);
+            $extends = class_parents($extension);
 
-            if(!in_array(BootExtensionable::class, $implements))
-                throw new \DebugException("Расширение {$extension} не реализует интерфейс " . BootExtensionable::class . " для инициализации его при запуске приложения");
+            if(!isset($extends[BootExtension::class]))
+                throw new DebugException("Расширение {$extension} не реализует интерфейс " . BootExtension::class . " для инициализации его при запуске приложения");
 
             $this->alias[$alias] = $extension;
             $this->bootedExtensions[$extension] = null;
@@ -73,26 +76,31 @@ class Extension
     {
         foreach ($this->bootedExtensions as $extension => $instance)
         {
-            $this->bootedExtensions[$extension] = (new $extension())->bootstrap($this->app);
+            $this->bootedExtensions[$extension] = (new $extension($this->app));
             $this->extensions[$extension] = &$this->bootedExtensions[$extension];
+
+            /**
+             * Boot extensions after initialization
+             */
+            $this->extensions[$extension]->bootstrap($this->app);
         }
     }
 
     /**
      * @param $alias
      * @param array $args
-     * @return Extensionable
-     * @throws \DebugException
+     * @return BaseExtension
+     * @throws DebugException
      */
     public function run($alias, ...$args)
     {
         if(!isset($this->alias[$alias]))
-            throw new \DebugException("{$alias} не является расширением");
+            throw new DebugException("{$alias} не является расширением");
 
         $extension = $this->alias[$alias];
 
         if(!$this->isExtensions($extension))
-            throw new \DebugException("Класс {$extension} не является расширением");
+            throw new DebugException("Класс {$extension} не является расширением");
 
         if(!array_key_exists($extension, $this->extensions))
             $this->runNoStack($extension);
@@ -110,21 +118,21 @@ class Extension
     /**
      * @param $alias
      * @param mixed ...$args
-     * @return Extensionable
-     * @throws \DebugException
+     * @return BaseExtension
+     * @throws DebugException
      */
     public function reRun($alias, ...$args)
     {
         if(!isset($this->alias[$alias]))
-            throw new \DebugException("{$alias} не является расширением");
+            throw new DebugException("{$alias} не является расширением");
 
         $extension = $this->alias[$alias];
 
         if(!$this->isExtensions($extension))
-            throw new \DebugException("Класс {$extension} не является расширением");
+            throw new DebugException("Класс {$extension} не является расширением");
 
         if(!array_key_exists($extension, $this->extensions))
-            throw new \DebugException("Класс {$extension} не указан в стэке расширений");
+            throw new DebugException("Класс {$extension} не указан в стэке расширений");
 
         unset($this->extensions[$extension]);
 
@@ -134,7 +142,7 @@ class Extension
     }
 
     /**
-     * @param Extensionable $extension
+     * @param BaseExtension $extension
      */
     public function runNoStack($extension)
     {
@@ -147,9 +155,9 @@ class Extension
      */
     protected function isExtensions($extension)
     {
-        $implements = class_implements($extension);
+        $extends = class_parents($extension);
 
-        if(!in_array(Extensionable::class, $implements))
+        if(!isset($extends[BaseExtension::class]))
             return false;
 
         return true;

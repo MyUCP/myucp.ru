@@ -16,12 +16,19 @@ class Application implements ArrayAccess
     private $registry;
 
     /**
+     * @var array
+     */
+    protected $alias = [];
+
+    /**
      * Application constructor.
      * @param Registry $registry
      */
     public function __construct($registry)
     {
         $this->registry = $registry;
+
+        $this->makeAliases();
     }
 
     /**
@@ -39,21 +46,84 @@ class Application implements ArrayAccess
      */
     public function __get($name)
     {
-        return $this->registry->$name;
+        if(isset($this->alias[$name])) {
+            $alias = $this->alias[$name];
+
+            return $this->registry->$alias;
+        }
+
+        if($this->registry->$name !== false)
+            return $this->registry->$name;
+
+        return false;
     }
 
     /**
      * @param $name
-     * @param null $value
+     * @param null $instance
      * @return bool|mixed|null
      */
-    public function make($name, $value = null)
+    public function make($name, $instance = null)
     {
-        if($value == null) {
+        if($instance == null) {
+            if(!$this->has($name)) {
+                return $this->make($name, new $name);
+            }
+
             return $this->$name;
         }
 
-        return $this->$name = $value;
+        return $this->$name = $instance;
+    }
+
+    /**
+     * Make new instance with parameters
+     *
+     * @param $name
+     * @param array $parameters
+     * @return bool|mixed|null
+     */
+    public function makeWith($name, $parameters = [])
+    {
+        if($this->has($name))
+            return $this->make($name);
+
+        return $this->make($name, new $name(...$parameters));
+    }
+
+    /**
+     * Make alias for instance or only name
+     *
+     * @param $alias
+     * @param null $name
+     * @param null $instance
+     * @return bool|mixed|null
+     */
+    public function alias($alias, $name = null, $instance = null)
+    {
+        if(is_null($name)) {
+            return $this->make($alias);
+        }
+
+        $this->alias[$alias] = $name;
+
+        if(is_null($instance))
+            return $this->make($name);
+
+        return $this->make($name, $instance);
+    }
+
+    /**
+     * Make alias for new instance with parameters
+     *
+     * @param $alias
+     * @param $name
+     * @param array $parameters
+     * @return bool|mixed|null
+     */
+    public function aliasWith($alias, $name, $parameters = [])
+    {
+        return $this->alias($alias, $name, $this->makeWith($name, $parameters));
     }
 
     /**
@@ -72,28 +142,34 @@ class Application implements ArrayAccess
      */
     public function init()
     {
-        $this->make("dotenv", new \MyUCP\Dotenv\Dotenv(ENV));
-        $this->make("dotenv")->load();
-
-        $this->make("config", new Config());
-
-        $this->make("handleException", new HandleExceptions())->make($this);
-
-        if(env("APP_DB", false)) {
-            $this->make("db", new DB($this->make("config")->db));
+        if(!file_exists(ENV . DIRECTORY_SEPARATOR . ".env")) {
+            if(!copy(ENV . DIRECTORY_SEPARATOR . ".env.example", ENV . DIRECTORY_SEPARATOR . ".env")) {
+                throw new Exception("Doest not exists [.env] or [.env.example] files.");
+            }
         }
 
-        $this->make("session", new Session());
-        $this->make("request", new Request());
-        $this->make("response", new Response());
-        $this->make("csrftoken", new CsrfToken($this['request']));
-        $this->make("load", new Load());
-        $this->make("lang", new Translator(new LocalizationLoader(config()->locale, config()->fallback_locale), config()->locale));
-        $this->make("view", new View());
-        $this->make("router", new Router());
-        $this->make("url", new UrlGenerator($this["routes"], $this["request"]));
+        $this->makeWith(\MyUCP\Dotenv\Dotenv::class, [ENV]);
+        $this->make("dotenv")->load();
 
-        $this->make("extension", new \MyUCP\Extension\Extension($this));
+        $this->make(Config::class);
+
+        $this->make(HandleExceptions::class)->make($this);
+
+        if(env("APP_DB", false)) {
+            $this->makeWith(DB::class, [$this->make("config")->db]);
+        }
+
+        $this->make(Session::class);
+        $this->make(Request::class);
+        $this->make(Response::class);
+        $this->makeWith(CsrfToken::class,[$this['request']]);
+        $this->make(Load::class);
+        $this->makeWith(Translator::class, [new LocalizationLoader(config()->locale, config()->fallback_locale), config()->locale]);
+        $this->make(View::class);
+        $this->make(Router::class);
+        $this->makeWith(UrlGenerator::class, [$this["routes"], $this["request"]]);
+
+        $this->makeWith(\MyUCP\Extension\Extension::class, [$this]);
 
         $this->initialized = true;
 
@@ -106,11 +182,46 @@ class Application implements ArrayAccess
     public function run()
     {
         $this->make("extension")->boot();
+        $this->make("router")->loadRouteService();
         $this->make("router")->loadRoutes(APP_DIR . 'routers.php');
         $this->make("router")->make();
         $this->make("response")->prepare($this->make("request"));
         $this->make("response")->send();
         $this->make("session")->unsetFlash();
+    }
+
+    /**
+     * Make default aliases
+     */
+    protected function makeAliases()
+    {
+        $this->alias = [
+            "dotenv" => \MyUCP\Dotenv\Dotenv::class,
+            "config" => Config::class,
+            "handleException" => HandleExceptions::class,
+            "db" => DB::class,
+            "session" => Session::class,
+            "request" => Request::class,
+            "response" => Response::class,
+            "csrftoken" => CsrfToken::class,
+            "load" => Load::class,
+            "lang" => Translator::class,
+            "view" => View::class,
+            "router" => Router::class,
+            "url" => UrlGenerator::class,
+            "extension" => \MyUCP\Extension\Extension::class,
+        ];
+    }
+
+    public function has($name)
+    {
+        if(isset($this->alias[$name]))
+            return true;
+
+        if($this->registry->$name !== false)
+            return true;
+
+        return false;
     }
 
     /**
@@ -135,7 +246,7 @@ class Application implements ArrayAccess
      */
     public function offsetExists($key)
     {
-        return isset($this->registry->$key);
+        return $this->registry->$key !== false;
     }
 
     /**

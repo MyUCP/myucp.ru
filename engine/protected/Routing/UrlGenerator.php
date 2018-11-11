@@ -34,9 +34,19 @@ class UrlGenerator
      *
      * @return string
      */
-    public function current()
+    public static function current()
     {
-        return $this->to($this->request->getPathInfo());
+        return request()->getPathInfo();
+    }
+
+    /**
+     * Get the current Route instance.
+     *
+     * @return string
+     */
+    public static function currentRoute()
+    {
+        return request()->getRoute();
     }
 
     /**
@@ -56,7 +66,7 @@ class UrlGenerator
             return $path;
         }
 
-        return config()->url . trim($path, "/");
+        return rtrim(config()->url, "/") . "/" . trim($path, "/");
     }
 
     /**
@@ -139,7 +149,7 @@ class UrlGenerator
             }
         }
 
-        return (isset($url)) ? "/" . trim($url, "/") : "/" . trim($uri, "/");
+        return "/" . trim($url, "/");
     }
 
     /**
@@ -170,6 +180,6 @@ class UrlGenerator
         // file in the paths. If it does, we will remove it since it is not needed
         // for asset paths, but only for routes to endpoints in the application.
 
-        return trim(config()->url, "/") . '/assets/' . trim($path, '/');
+        return rtrim(config()->url, "/") . '/assets/' . trim($path, '/');
     }
 }

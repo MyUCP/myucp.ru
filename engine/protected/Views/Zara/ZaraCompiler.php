@@ -56,7 +56,7 @@ class ZaraCompiler
     protected $factory;
 
     /**
-     * @var ZaraService
+     * @var \App\services\ZaraService
      */
     protected $service;
 
@@ -77,7 +77,7 @@ class ZaraCompiler
     public function compile($path = null, ZaraFactory $factory)
     {
         $this->factory = $factory;
-        $this->service = new ZaraService(
+        $this->service = new \App\services\ZaraService(
             str_replace(".zara.php", "", pathinfo($path)['basename'])
         );
 
@@ -161,7 +161,7 @@ class ZaraCompiler
         if (method_exists($this, $method = 'compile'.ucfirst($match[1]))) {
             $match[0] = $this->$method((isset($match[3]) ? $match[3] : ""));
         } elseif (isset($this->customDirectives[$match[1]])) {
-            $match[0] = $this->callCustomDirective($match[1], $match[3]);
+            $match[0] = $this->callCustomDirective($match[1], (isset($match[3]) ? $match[3] : ""));
         }
 
         return isset($match[3]) ? $match[0] : $match[0].$match[2];
@@ -570,6 +570,8 @@ class ZaraCompiler
     }
 
     /**
+     * @method()
+     *
      * @param $expression
      * @return string
      */
@@ -579,6 +581,8 @@ class ZaraCompiler
     }
 
     /**
+     * @lang()
+     *
      * @param $expression
      * @return string
      */
@@ -588,6 +592,8 @@ class ZaraCompiler
     }
 
     /**
+     * @csrf_token()
+     *
      * @param $expression
      * @return string
      */
@@ -597,12 +603,25 @@ class ZaraCompiler
     }
 
     /**
+     * @csrf_field()
+     *
      * @param $expression
      * @return string
      */
     protected function compileCsrf_field($expression)
     {
         return "<?php echo csrf_field(); ?>";
+    }
+
+    /**
+     * @asset()
+     *
+     * @param $expression
+     * @return string
+     */
+    protected function compileAsset($expression)
+    {
+        return "<?php echo asset$expression; ?>";
     }
 
     /**

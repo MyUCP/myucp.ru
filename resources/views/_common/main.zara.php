@@ -31,10 +31,10 @@
                             <a href="/docs">Документация</a>
                         </li>
                         <li>
-                            <a href="https://github.com/MyUCP/MyUCP">GitHub</a>
+                            <a href="https://github.com/MyUCP">GitHub</a>
                         </li>
                         <li>
-                            <a href="https://github.com/MyUCP/MyUCP/archive/master.zip">Скачать</a>
+                            <a href="https://github.com/MyUCP/MyUCP/archive/5.x.zip">Скачать</a>
                         </li>
                     </ul>
                 </div>
@@ -46,6 +46,9 @@
                     <li class="docs-menu-button"><i class="fa fa-bars"></i></li>
                     <li class="hidden-xs hidden-sm">
                         <span>Версия фреймворка:</span>
+                    </li>
+                    <li @if($docs->version() == 5.7) class="active" @endif>
+                        <a href="{{ url('docs.version', ['version' => '5.7']) }}">5.7</a>
                     </li>
                     <li @if($docs->version() == 5.6) class="active" @endif>
                         <a href="{{ url('docs.version', ['version' => '5.6']) }}">5.6</a>
@@ -73,16 +76,19 @@
                             <li>Установка и настройка
                                 <ul>
                                     <li @yield("installation")><a href="{{ url('docs.version.page', ['version' => $docs->version(), 'code' => 'installation']) }}">Установка</a></li>
-                                    <li @yield("configs")><a href="{{ url('docs.version.page', ['version' => $docs->version(), 'code' => 'configs']) }}">Configs</a></li>
+                                    <li @yield("configs")><a href="{{ url('docs.version.page', ['version' => $docs->version(), 'code' => 'configs']) }}">Конфигурация</a></li>
                                 </ul>
                             </li>
                             <li>HTTP
                                 <ul>
                                     <li @yield("routing")><a href="/docs/{{ $docs->version() }}/routing">Маршрутизация</a></li>
-                                    <li @yield("requests")><a href="/docs/{{ $docs->version() }}/requests">Requests</a></li>
-                                    <li @yield("responses")><a href="/docs/{{ $docs->version() }}/responses">Responses</a></li>
-                                    @if($docs->version() == 5.5 || $docs->version() == 5.6)
-                                    <li @yield("session")><a href="/docs/{{ $docs->version() }}/session">Session</a></li>
+                                    @if($docs->version() == 5.7)
+                                    <li @yield("session")><a href="/docs/{{ $docs->version() }}/csrf">CSRF защита</a></li>
+                                    @endif
+                                    <li @yield("requests")><a href="/docs/{{ $docs->version() }}/requests">Запросы</a></li>
+                                    <li @yield("responses")><a href="/docs/{{ $docs->version() }}/responses">Ответ (RESPONSE)</a></li>
+                                    @if($docs->version() == 5.5 || $docs->version() == 5.6 || $docs->version() == 5.7)
+                                    <li @yield("session")><a href="/docs/{{ $docs->version() }}/session">Сессия</a></li>
                                     @endif
                                 </ul>
                             </li>
@@ -95,17 +101,25 @@
                             </li>
                             <li>Основы
                                 <ul>
+                                    @if($docs->version() == 5.7)
+                                    <li @yield("container")><a href="/docs/{{ $docs->version() }}/container">Контейнер</a></li>
+                                    @endif
                                     <li @yield("controllers")><a href="/docs/{{ $docs->version() }}/controllers">Контроллеры</a></li>
                                     <li @yield("helpers")><a href="/docs/{{ $docs->version() }}/helpers">Помощники</a></li>
+                                    @if($docs->version() != 5.7)
                                     <li @yield("libraries")><a href="/docs/{{ $docs->version() }}/libraries">Библиотеки</a></li>
+                                    @endif
                                     <li @yield("views")><a href="/docs/{{ $docs->version() }}/views">Шаблоны</a></li>
                                     <li @yield("zara")><a href="/docs/{{ $docs->version() }}/zara">Шаблонизатор Zara</a></li>
                                 </ul>
                             </li>
-                            @if($docs->version() == 5.5 || $docs->version() == 5.6)
+                            @if($docs->version() == 5.5 || $docs->version() == 5.6 || $docs->version() == 5.7)
                             <li>Сервисы
                                 <ul>
                                     <li @yield("localization")><a href="/docs/{{ $docs->version() }}/localization">Локализация</a></li>
+                                    @if($docs->version() == 5.7)
+                                    <li @yield("extensions")><a href="/docs/{{ $docs->version() }}/extensions">Расширения</a></li>
+                                    @endif
                                 </ul>
                             </li>
                             @endif
@@ -129,7 +143,7 @@
                         <ul>
                             <li><a href="https://github.com/MyUCP/MyUCP/issues" rel="nofollow" target="_blank">Сообщить о баге</a></li>
                             <li><a href="https://github.com/MyUCP" rel="nofollow" target="_blank">Другие проекты</a></li>
-                            <li><a href="https://github.com/MyUCP/MyUCP/commits/master" rel="nofollow" target="_blank">Последние изменения</a></li>
+                            <li><a href="https://github.com/MyUCP/MyUCP/commits" rel="nofollow" target="_blank">Последние изменения</a></li>
                         </ul>
                     </section>
                     <section class="col-xs-12 col-sm-4 col-md-3">
@@ -138,7 +152,7 @@
                         </header>
                         <ul>
                             <li><a href="http://myucp.ru" rel="nofollow" target="_blank">Официальный сайт</a></li>
-                            <li><a href="https://github.com/MyUCP" rel="nofollow" target="_blank">Библиотеки</a></li>
+                            <li><a href="https://github.com/MyUCP" rel="nofollow" target="_blank">Расширения</a></li>
                             <li><a href="http://maksa988.tech/" rel="nofollow" target="_blank">Автор</a></li>
                         </ul>
                     </section>

@@ -38,6 +38,11 @@ class Router
     protected $groupStack = [];
 
     /**
+     * @var \App\services\RouteService
+     */
+    protected $service;
+
+    /**
      * Create a new Router instance.
      *
      * @return void
@@ -47,7 +52,7 @@ class Router
         $this->routes = new RouteCollection;
         $this->currentRequest = $request ?: app("request");
 
-        app()->make("routes", $this->routes);
+        app()->alias("routes", RouteCollection::class, $this->routes);
     }
 
     /**
@@ -152,30 +157,37 @@ class Router
     /**
      * Register a new route responding a view.
      *
-     * @param  string  $uri
-     * @param  string  $viewName
-     * @param  \Closure|array|string|null  $action
+     * @param  string $uri
+     * @param  string $viewName
+     * @param array $parameters
      * @return Route
      */
-    public static function view($uri, $viewName, $action = null)
+    public static function view($uri, $viewName, $parameters = [])
     {
-        return self::any($uri, $action)->uses(function () use ($viewName) {
-            return view($viewName);
+        return self::any($uri, null)->uses(function () use ($viewName, $parameters) {
+            return view($viewName, $parameters);
         });
     }
 
     /**
      * Register a new route responding a redirect.
      *
-     * @param  string  $uri
-     * @param  Route|string  $to
-     * @param  \Closure|array|string|null  $action
+     * @param  string|array $uri
+     * @param  Route|string $to
+     * @param int $status
      * @return Route
      */
-    public static function redirect($uri, $to, $action = null)
+    public static function redirect($uri, $to, $status = 302)
     {
-        return self::any($uri, $action)->uses(function () use ($to) {
-            return redirect($to);
+        $parameters = [];
+
+        if(is_array($uri)) {
+            $parameters = $uri['parameters'];
+            $uri = $uri['uri'];
+        }
+
+        return self::any($uri, null)->uses(function () use ($to, $parameters, $status) {
+            return redirect($to, $parameters, $status);
         });
     }
 
@@ -256,7 +268,7 @@ class Router
     protected function updateGroupStack(array $attributes)
     {
         if (! empty($this->groupStack)) {
-            $attributes = RouteGroup::merge($attributes, end($this->groupStack));
+            $attributes = $this->mergeWithLastGroup($attributes);
         }
 
         $this->groupStack[] = $attributes;
@@ -333,6 +345,24 @@ class Router
         } else {
             require $routes;
         }
+    }
+
+    /**
+     * Load RouteService
+     *
+     * @return void
+     */
+    public function loadRouteService()
+    {
+        $this->service = new \App\services\RouteService($this);
+    }
+
+    /**
+     * @return \App\services\RouteService
+     */
+    public function getRouteService()
+    {
+        return $this->service;
     }
 
     /**
@@ -424,6 +454,8 @@ class Router
      * Make the request to the application.
      *
      * @return mixed
+     * @throws HttpException
+     * @throws DebugException
      */
     public function make()
     {
@@ -448,6 +480,7 @@ class Router
      * Find the route matching a given request.
      *
      * @return Route
+     * @throws HttpException
      */
     protected function findRoute()
     {
@@ -465,21 +498,12 @@ class Router
      */
     public function hasGroupStack()
     {
-        return ! empty($this->groupStack);
+        return !empty($this->groupStack);
     }
 
     public function mergeGroupAttributesIntoRoute(Route $route)
     {
-        foreach ($this->groupStack as $group)
-        {
-            if(isset($group['domain'])) {
-                $route->action['domain'] = $group['domain'];
-            }
-
-            if(isset($group['as'])) {
-                $route->name($group['as'].$route->getName());
-            }
-        }
+        $route->setAction($this->mergeWithLastGroup($route->getAction()));
     }
 
     /**

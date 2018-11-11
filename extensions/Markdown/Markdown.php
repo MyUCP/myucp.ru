@@ -5,9 +5,9 @@
 
 namespace Extensions\Markdown;
 
-use MyUCP\Extension\Extensionable;
+use MyUCP\Extension\BaseExtension;
 
-class Markdown implements Extensionable
+class Markdown extends BaseExtension
 {
     protected $html;
 

@@ -37,7 +37,7 @@
 <div class="container">
     <div class="content">
         <div class="title"><?=$code?></div>
-        <div class="description">Ой, у нас что-то пошло не так. Обновите страницу или зайди позже.</div>
+        <div class="description">Страница не найдена, вернитесь назад и повторите поиск.</div>
     </div>
 </div>
 </body>

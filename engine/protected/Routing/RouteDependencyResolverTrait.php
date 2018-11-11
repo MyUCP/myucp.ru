@@ -5,10 +5,11 @@ trait RouteDependencyResolverTrait
     /**
      * Resolve the object method's type-hinted dependencies.
      *
-     * @param  array  $parameters
-     * @param  object  $instance
-     * @param  string  $method
+     * @param  array $parameters
+     * @param  object $instance
+     * @param  string $method
      * @return array
+     * @throws ReflectionException
      */
     protected function resolveClassMethodDependencies(array $parameters, $instance, $method)
     {
@@ -58,7 +59,7 @@ trait RouteDependencyResolverTrait
         $class = $parameter->getClass();
 
         if ($class && ! $this->alreadyInParameters($class->name, $parameters)) {
-            return app()->make($class->name);
+            return app()->makeWith($class->name, $parameters);
         }
     }
 
