@@ -2,6 +2,9 @@
 
 class Documentation 
 {
+    /**
+     * @return string
+     */
 	public function version() 
 	{
 		if(!empty(route()->parameters()['version'])) {
@@ -11,13 +14,11 @@ class Documentation
 		return DEFAULT_VERSION;
 	}
 
+    /**
+     * @return bool|mixed
+     */
 	public static function getDocVersions()
     {
-        return [
-            'master' => 'Master',
-            '5.6' => '5.6',
-            '5.5' => '5.5',
-            '5.4' => '5.4',
-        ];
+        return config('versions');
     }
 }
